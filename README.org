@@ -41,20 +41,26 @@ typing_extensions==4.11.0
 Werkzeug==3.0.2
 #+end_src
 
+You can try using virtual env so that it doesn't pollute your global python
+
 #+begin_src
 python3 -m venv .venv
 #+end_src
 
+Then hop in using:
+
 #+begin_src
 source .venv/bin/activate
 #+end_src
+
+Then typing:
 
 #+caption: Install requirements through pip (Virtual Environment recommended)
 #+begin_src
 pip install -r requirements.py
 #+end_src
 
-then to run the app
+then running the app by:
 
 #+begin_src
 python3 app.py
@@ -372,6 +378,7 @@ def update_packets_by_interface():
 * =app.py=
 
 #+begin_src
+#!/usr/bin/env python3
 """
 Network Monitoring with Prometheus
 
@@ -385,9 +392,11 @@ Metrics:
 - `packets_sent`: Number of packets sent by each network interface.
 - `packets_received`: Number of packets received by each network interface.
 """
+
 import random
 import logging
 import statistics
+from itertools import islice
 from flask import Flask, Response
 from prometheus_client import Counter, Gauge, generate_latest
 from ping3 import ping
@@ -449,17 +458,16 @@ def update_ping_gauge():
     """Define a function to update the gauge with ping results"""
     number_of_pings = 5
     for host in hosts_to_ping:
-        ping_times = []
-        for _ in range(number_of_pings):
-            rtt = ping(host, unit="ms")
-            if not rtt:
-                # spending too long on timeout or non existing pings
-                # wastes time and energy.
-                ping_times.append(0)
-                break
-            ping_times.append(rtt)
-        # Take a mean of the list of five pings
-        ping_gauge.labels(dest=host).set(statistics.mean(ping_times))
+        # creates an iterator of pings to host that stops at `None`
+        def ping_host(host: str):
+            return iter(lambda: ping(host, unit="ms", timeout=2), None)
+
+        # takes at most `number_of_pings` rtt from ping_host
+        take_n_pings = list(islice(ping_host(host), number_of_pings))
+        # takes the mean of the list of valid ping times 0 for invalid pings
+        ping_gauge.labels(dest=host).set(
+            statistics.mean(take_n_pings if take_n_pings else [0])
+        )
 
 
 def update_packets_by_interface():
@@ -494,59 +502,6 @@ if __name__ == "__main__":
 
 #+begin_src latex
 \newpage
-#+end_src
-
-* =shell.nix=
-
-#+begin_src
-{ pkgs ? import <nixpkgs> { } }:
-
-let
-  # Overriding the default 'ping3' package with custom source details
-  customPing3 = pkgs.python3Packages.buildPythonPackage rec {
-    pname = "ping3";
-    version = "4.0.8";
-    format = "wheel";
-
-    src = pkgs.fetchurl {
-      url = "https://files.pythonhosted.org/packages/e6/f4/4070daca3da5bbc"
-        + "3ef5e622d68f979e034e5bf678416817918e51a1b2907/"
-        + "ping3-4.0.8-py3-none-any.whl";
-      sha256 = "152mj8qrqhbphrm46jsr451bh714g0kjb7gnkag25d38362r9hmm";
-    };
-    # Disable tests, as they might not be needed for this context
-    doCheck = false;
-  };
-
-  # Create a Python environment with additional packages,
-  # including the custom 'ping3'
-  myPythonEnv = pkgs.python3.withPackages (ps: with ps; [ customPing3 ]);
-
-in pkgs.mkShell {
-  # The build inputs for the Nix shell include the
-  # Python environment with customizations
-  buildInputs = [
-    # installing ping3
-    myPythonEnv
-    # installing prometheus
-    pkgs.prometheus
-    # installing pyton packages from nixpkgs
-    (with pkgs.python3Packages; [
-      pylint
-      black
-      flask
-      psutil
-      jinja2
-      prometheus-client
-    ])
-    # installing LaTeX for report writing
-    (pkgs.texlive.combine {
-      inherit (pkgs.texlive)
-        scheme-full beamer latexmk wrapfig ulem capt-of
-        collection-fontsrecommended amsmath hyperref;
-    })
-  ];
-}
 #+end_src
 
 * Footnotes
