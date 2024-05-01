@@ -41,7 +41,7 @@ typing_extensions==4.11.0
 Werkzeug==3.0.2
 #+end_src
 
-You can try using virtual env so that it doesn't pollute your global python
+You can try using venv [fn:10] so that it doesn't pollute your global python
 
 #+begin_src
 python3 -m venv .venv
@@ -68,13 +68,13 @@ python3 app.py
 
 *** Installing without NixOS
 
-If you've downloaded this project and have the Nix[fn:9] package manager, then type
+If you've downloaded this project and have the Nix[fn:9] package manager, then once you're in this project's directory type:
 
 #+begin_src
 nix-build
 #+end_src
 
-and then use this to run the app
+and then type this to run the app
 
 #+begin_src
 ./result/bin/app.py
@@ -85,7 +85,7 @@ and then use this to run the app
 
 The next assumption is that you have a way to run prometheus [fn:4]. The =prometheus.yml= file has been provided (Figure [[fig:prometheus-yaml-file]]) and so are the instructions to run it (Figure [[fig:prometheus-command]]).
 
-I assume you have a prometheus scraper that is scraping localhost:5000.
+I assume you have prometheus that is scraping localhost:5000.
 
 #+name: fig:prometheus-yaml-file
 #+caption: The =prometheus.yml= file
@@ -181,6 +181,46 @@ return list(islice(ping_host("netflix.com"), number_of_pings))
 
 #+caption: empty list for pinging something that doesn't exist
 #+RESULTS:
+
+These pings are passed onto =statistics.mean= if they exist
+
+#+begin_src python :exports both :results table
+from itertools import islice
+from ping3 import ping
+import statistics
+
+number_of_pings = 5
+# creates an iterator of pings to host that stops at `None`
+def ping_host(host: str):
+    return iter(lambda: ping(host, unit="ms", timeout=2), None)
+
+# takes at most `number_of_pings` rtt from ping_host
+take_n_pings = list(islice(ping_host("google.com"), number_of_pings))
+# takes the mean of the list of valid ping times 0 for invalid pings
+return f"exist: {statistics.mean(take_n_pings if take_n_pings else [0])}"
+#+end_src
+
+#+RESULTS:
+| exist: 59.62724685668945 |
+
+#+begin_src python :exports both :results table
+from itertools import islice
+from ping3 import ping
+import statistics
+
+number_of_pings = 5
+# creates an iterator of pings to host that stops at `None`
+def ping_host(host: str):
+    return iter(lambda: ping(host, unit="ms", timeout=2), None)
+
+# takes at most `number_of_pings` rtt from ping_host
+take_n_pings = list(islice(ping_host("netflix.com"), number_of_pings))
+# takes the mean of the list of valid ping times 0 for invalid pings
+return f"not exist: {statistics.mean(take_n_pings if take_n_pings else [0])}"
+#+end_src
+
+#+RESULTS:
+| not exist: 0 |
 
 *** =app.py=
 
@@ -505,6 +545,7 @@ if __name__ == "__main__":
 #+end_src
 
 * Footnotes
+[fn:10] venv. https://docs.python.org/3/library/venv.html
 
 [fn:9] Nix Package manager. https://nixos.org/download/
 [fn:8] Ubuntu. https://cdimage.ubuntu.com/ubuntu-server/jammy/daily-live/20231208/
