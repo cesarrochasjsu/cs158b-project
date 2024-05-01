@@ -4,12 +4,23 @@
 
 * Assumptions
 
+The source code for this project can be found here if any build issues occur from the files submitted on canvas:
+
+#+begin_src
+git clone https://github.com/cesarrochasjsu/cs158b-project.git
+cd cs158b-project
+#+end_src
+
 ** Python
 
-This Python[fn:3] project was developed using NixOS[fn:1]. Appendix [[=shell.nix=]] contains the =shell.nix= file for this app. However, a non-NixOS user can use Python's pip [fn:2] and =requirements.txt= (Figure [[fig:requirements]]) to run it.
+This Python[fn:3] project was developed using NixOS[fn:1] and tested on Ubuntu [fn:8]. However, a non-NixOS user can use Python's pip [fn:2] and =requirements.py= (Figure [[fig:requirements]]) to run it.
+
+*** Installing without NixOS
+
+It's really easy to install this project through a =requirements.py= file.
 
 #+name: fig:requirements
-#+caption: The =requirements.txt= file
+#+caption: The =requirements.py= file
 #+begin_src
 black==24.4.0
 blinker==1.7.0
@@ -30,14 +41,45 @@ typing_extensions==4.11.0
 Werkzeug==3.0.2
 #+end_src
 
+#+begin_src
+python3 -m venv .venv
+#+end_src
+
+#+begin_src
+source .venv/bin/activate
+#+end_src
+
 #+caption: Install requirements through pip (Virtual Environment recommended)
 #+begin_src
-pip install -r requirements.txt
+pip install -r requirements.py
 #+end_src
+
+then to run the app
+
+#+begin_src
+python3 app.py
+#+end_src
+
+*** Installing without NixOS
+
+If you've downloaded this project and have the Nix[fn:9] package manager, then type
+
+#+begin_src
+nix-build
+#+end_src
+
+and then use this to run the app
+
+#+begin_src
+./result/bin/app.py
+#+end_src
+
 
 ** Prometheus
 
-The next assumption is that you have a way to run prometheus [fn:4]. The =prometheus.yml= file has been provided (Figure [[fig:prometheus-yaml-file]]) and so are the instructions to run it (Figure [[fig:prometheus-command]])
+The next assumption is that you have a way to run prometheus [fn:4]. The =prometheus.yml= file has been provided (Figure [[fig:prometheus-yaml-file]]) and so are the instructions to run it (Figure [[fig:prometheus-command]]).
+
+I assume you have a prometheus scraper that is scraping localhost:5000.
 
 #+name: fig:prometheus-yaml-file
 #+caption: The =prometheus.yml= file
@@ -509,6 +551,8 @@ in pkgs.mkShell {
 
 * Footnotes
 
+[fn:9] Nix Package manager. https://nixos.org/download/
+[fn:8] Ubuntu. https://cdimage.ubuntu.com/ubuntu-server/jammy/daily-live/20231208/
 [fn:7] net_iocounters. https://psutil.readthedocs.io/en/latest/#psutil.net_io_counters
 [fn:6] psutil. https://pypi.org/project/psutil/
 [fn:5] Ping3. https://pypi.org/project/ping3/

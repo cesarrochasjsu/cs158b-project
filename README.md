@@ -1,37 +1,51 @@
 
 # Table of Contents
 
-1.  [Assumptions](#org2550e73)
-    1.  [Python](#orgf25dc60)
-    2.  [Prometheus](#orgf8c78f2)
-2.  [Design](#org113f532)
-    1.  [Average Ping RTT(`avg_rtt`)](#org007b9a0)
-        1.  [Ping3](#orgde07c5c)
-        2.  [`app.py`](#org5f669bd)
-        3.  [Results](#org57d09b1)
-    2.  [Number of Packets Sent(`packets_sent`)](#orga9be34a)
-        1.  [psutils](#org1fc2be5)
-        2.  [`app.py`](#org7721dff)
-        3.  [Results](#orge8346b6)
-    3.  [Number of Packets Received(`packets_recv`)](#org4880418)
-        1.  [psutil](#org328ac6d)
-        2.  [`app.py`](#org79f50b9)
-        3.  [Results](#org555605c)
-3.  [`app.py`](#org82f69af)
-4.  [`shell.nix`](#org007033f)
+1.  [Assumptions](#org6664818)
+    1.  [Python](#org09a747f)
+        1.  [Installing without NixOS](#org7e2d3ef)
+        2.  [Installing without NixOS](#org7618343)
+    2.  [Prometheus](#org2259896)
+2.  [Design](#orgb52715d)
+    1.  [Average Ping RTT(`avg_rtt`)](#org1c68918)
+        1.  [Ping3](#org049538f)
+        2.  [`app.py`](#orgf8cde4a)
+        3.  [Results](#orgaa7f906)
+    2.  [Number of Packets Sent(`packets_sent`)](#org03bf532)
+        1.  [psutils](#orgfd09201)
+        2.  [`app.py`](#orgb4d373f)
+        3.  [Results](#orgde8667c)
+    3.  [Number of Packets Received(`packets_recv`)](#org9486a05)
+        1.  [psutil](#org0e23def)
+        2.  [`app.py`](#orgad9c461)
+        3.  [Results](#org11228ea)
+3.  [`app.py`](#orga6ab386)
+4.  [`shell.nix`](#orge7dfa6c)
 
 
 
-<a id="org2550e73"></a>
+<a id="org6664818"></a>
 
 # Assumptions
 
+The source code for this project can be found here if any build issues occur from the files submitted on canvas:
 
-<a id="orgf25dc60"></a>
+    git clone https://github.com/cesarrochasjsu/cs158b-project.git
+    cd cs158b-project
+
+
+<a id="org09a747f"></a>
 
 ## Python
 
-This Python<sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup> project was developed using NixOS<sup><a id="fnr.2" class="footref" href="#fn.2" role="doc-backlink">2</a></sup>. Appendix [4](#org007033f) contains the `shell.nix` file for this app. However, a non-NixOS user can use Python&rsquo;s pip <sup><a id="fnr.3" class="footref" href="#fn.3" role="doc-backlink">3</a></sup> and `requirements.txt` (Figure [1](#org6b63f6f)) to run it.
+This Python<sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup> project was developed using NixOS<sup><a id="fnr.2" class="footref" href="#fn.2" role="doc-backlink">2</a></sup> and tested on Ubuntu <sup><a id="fnr.3" class="footref" href="#fn.3" role="doc-backlink">3</a></sup>. However, a non-NixOS user can use Python&rsquo;s pip <sup><a id="fnr.4" class="footref" href="#fn.4" role="doc-backlink">4</a></sup> and `requirements.py` (Figure [2](#org1eb6a43)) to run it.
+
+
+<a id="org7e2d3ef"></a>
+
+### Installing without NixOS
+
+It&rsquo;s really easy to install this project through a `requirements.py` file.
 
     black==24.4.0
     blinker==1.7.0
@@ -51,14 +65,37 @@ This Python<sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1
     typing_extensions==4.11.0
     Werkzeug==3.0.2
 
-    pip install -r requirements.txt
+    python3 -m venv .venv
+
+    source .venv/bin/activate
+
+    pip install -r requirements.py
+
+then to run the app
+
+    python3 app.py
 
 
-<a id="orgf8c78f2"></a>
+<a id="org7618343"></a>
+
+### Installing without NixOS
+
+If you&rsquo;ve downloaded this project and have the Nix<sup><a id="fnr.5" class="footref" href="#fn.5" role="doc-backlink">5</a></sup> package manager, then type
+
+    nix-build
+
+and then use this to run the app
+
+    ./result/bin/app.py
+
+
+<a id="org2259896"></a>
 
 ## Prometheus
 
-The next assumption is that you have a way to run prometheus <sup><a id="fnr.4" class="footref" href="#fn.4" role="doc-backlink">4</a></sup>. The `prometheus.yml` file has been provided (Figure [3](#org72463ed)) and so are the instructions to run it (Figure [4](#orgf61b65a))
+The next assumption is that you have a way to run prometheus <sup><a id="fnr.6" class="footref" href="#fn.6" role="doc-backlink">6</a></sup>. The `prometheus.yml` file has been provided (Figure [9](#org5b006e9)) and so are the instructions to run it (Figure [10](#orgf67ba03)).
+
+I assume you have a prometheus scraper that is scraping localhost:5000.
 
     global:
       scrape_interval:     10s # By default, scrape targets every 15 seconds.
@@ -80,21 +117,21 @@ The next assumption is that you have a way to run prometheus <sup><a id="fnr.4" 
     prometheus --config.file=prometheus.yml
 
 
-<a id="org113f532"></a>
+<a id="orgb52715d"></a>
 
 # Design
 
 
-<a id="org007b9a0"></a>
+<a id="org1c68918"></a>
 
 ## Average Ping RTT(`avg_rtt`)
 
 
-<a id="orgde07c5c"></a>
+<a id="org049538f"></a>
 
 ### Ping3
 
-Average Ping RTT was calculated using ping3 <sup><a id="fnr.5" class="footref" href="#fn.5" role="doc-backlink">5</a></sup> library&rsquo;s `ping` function in python
+Average Ping RTT was calculated using ping3 <sup><a id="fnr.7" class="footref" href="#fn.7" role="doc-backlink">7</a></sup> library&rsquo;s `ping` function in python
 
     from ping3 import ping
     
@@ -108,7 +145,7 @@ Average Ping RTT was calculated using ping3 <sup><a id="fnr.5" class="footref" h
 </colgroup>
 <tbody>
 <tr>
-<td class="org-left">Ping something that exists: 59.10754203796387</td>
+<td class="org-left">Ping something that exists: 61.879873275756836</td>
 </tr>
 </tbody>
 </table>
@@ -178,7 +215,7 @@ Timeout is useful for when the ping takes too long, or host doesn&rsquo;t exist.
     return list(islice(ping_host("netflix.com"), number_of_pings))
 
 
-<a id="org5f669bd"></a>
+<a id="orgf8cde4a"></a>
 
 ### `app.py`
 
@@ -214,7 +251,7 @@ To record the ping results in `app.py`, A `Gauge` that keeps track of pings, and
                 statistics.mean(take_n_pings if take_n_pings else [0])
             )
 
-See Figure [10](#orgddc44b7) for the implementation of the updated gauge in `app.py`. Figure [11](#org6cb3d62) shows how the `update_ping_gauge` function is used in `app.py` to collect information about `avg_rtt` for scraping.
+See Figure [16](#org5967e82) for the implementation of the updated gauge in `app.py`. Figure [17](#org4f8f099) shows how the `update_ping_gauge` function is used in `app.py` to collect information about `avg_rtt` for scraping.
 
     @app.route("/metrics", methods=["GET"])
     def get_data():
@@ -226,7 +263,7 @@ See Figure [10](#orgddc44b7) for the implementation of the updated gauge in `app
         return Response(generate_latest(), mimetype=CONTENT_TYPE_LATEST)
 
 
-<a id="org57d09b1"></a>
+<a id="orgaa7f906"></a>
 
 ### Results
 
@@ -235,16 +272,16 @@ See Figure [10](#orgddc44b7) for the implementation of the updated gauge in `app
 ![img](/home/nixer/2024-04-28-172245_1592x829_scrot.png "prometheus scraping localhost:9090 for `avg_rtt` of &ldquo;www.google.com&rdquo;")
 
 
-<a id="orga9be34a"></a>
+<a id="org03bf532"></a>
 
 ## Number of Packets Sent(`packets_sent`)
 
 
-<a id="org1fc2be5"></a>
+<a id="orgfd09201"></a>
 
 ### psutils
 
-The psutil<sup><a id="fnr.6" class="footref" href="#fn.6" role="doc-backlink">6</a></sup> library can be used to monitor the number of packets sent by interface. The net\_io\_counters <sup><a id="fnr.7" class="footref" href="#fn.7" role="doc-backlink">7</a></sup> method returns network I/O statistics as a named tuple. Using the `pernic=True` variable will return that named tuple for all network interface names.
+The psutil<sup><a id="fnr.8" class="footref" href="#fn.8" role="doc-backlink">8</a></sup> library can be used to monitor the number of packets sent by interface. The net\_io\_counters <sup><a id="fnr.9" class="footref" href="#fn.9" role="doc-backlink">9</a></sup> method returns network I/O statistics as a named tuple. Using the `pernic=True` variable will return that named tuple for all network interface names.
 
     import psutil
     
@@ -258,13 +295,13 @@ The psutil<sup><a id="fnr.6" class="footref" href="#fn.6" role="doc-backlink">6<
 </colgroup>
 <tbody>
 <tr>
-<td class="org-right">18059</td>
+<td class="org-right">20683</td>
 </tr>
 </tbody>
 </table>
 
 
-<a id="org7721dff"></a>
+<a id="orgb4d373f"></a>
 
 ### `app.py`
 
@@ -288,10 +325,10 @@ To fill in the packet sent gauge, a function named `update_packets_by_interface`
                 counters.packets_sent,
             )
 
-The `update_packets_sent_by_interface` function was used in `app.py` in the `get_data` function (Figure [11](#org6cb3d62)).
+The `update_packets_sent_by_interface` function was used in `app.py` in the `get_data` function (Figure [17](#org4f8f099)).
 
 
-<a id="orge8346b6"></a>
+<a id="orgde8667c"></a>
 
 ### Results
 
@@ -300,12 +337,12 @@ The `update_packets_sent_by_interface` function was used in `app.py` in the `get
 ![img](/home/nixer/2024-04-28-185252_1596x542_scrot.png "prometheus query for `packets_sent` for `ifname=lo` in localhost:9090 scraping localhost:5000")
 
 
-<a id="org4880418"></a>
+<a id="org9486a05"></a>
 
 ## Number of Packets Received(`packets_recv`)
 
 
-<a id="org328ac6d"></a>
+<a id="org0e23def"></a>
 
 ### psutil
 
@@ -323,13 +360,13 @@ To obtain the number of packets received per network interface,
 </colgroup>
 <tbody>
 <tr>
-<td class="org-right">18059</td>
+<td class="org-right">20683</td>
 </tr>
 </tbody>
 </table>
 
 
-<a id="org79f50b9"></a>
+<a id="orgad9c461"></a>
 
 ### `app.py`
 
@@ -356,7 +393,7 @@ To collect the packets received per network interface, a packets received gauge 
             )
 
 
-<a id="org555605c"></a>
+<a id="org11228ea"></a>
 
 ### Results
 
@@ -365,7 +402,7 @@ To collect the packets received per network interface, a packets received gauge 
 ![img](/home/nixer/2024-04-28-190257_1600x521_scrot.png "prometheus query for `packets_recv` in localhost:9090 scraping localhost:5000")
 
 
-<a id="org82f69af"></a>
+<a id="orga6ab386"></a>
 
 # `app.py`
 
@@ -489,7 +526,7 @@ To collect the packets received per network interface, a packets received gauge 
         app.run(debug=True, host="0.0.0.0")
 
 
-<a id="org007033f"></a>
+<a id="orge7dfa6c"></a>
 
 # `shell.nix`
 
@@ -549,12 +586,16 @@ To collect the packets received per network interface, a packets received gauge 
 
 <sup><a id="fn.2" href="#fnr.2">2</a></sup> NixOS. <https://nixos.org/>
 
-<sup><a id="fn.3" href="#fnr.3">3</a></sup> Pip. <https://pip.pypa.io/en/stable/installation/>
+<sup><a id="fn.3" href="#fnr.3">3</a></sup> Ubuntu. <https://cdimage.ubuntu.com/ubuntu-server/jammy/daily-live/20231208/>
 
-<sup><a id="fn.4" href="#fnr.4">4</a></sup> Prometheus. <https://prometheus.io/>
+<sup><a id="fn.4" href="#fnr.4">4</a></sup> Pip. <https://pip.pypa.io/en/stable/installation/>
 
-<sup><a id="fn.5" href="#fnr.5">5</a></sup> Ping3. <https://pypi.org/project/ping3/>
+<sup><a id="fn.5" href="#fnr.5">5</a></sup> Nix Package manager. <https://nixos.org/download/>
 
-<sup><a id="fn.6" href="#fnr.6">6</a></sup> psutil. <https://pypi.org/project/psutil/>
+<sup><a id="fn.6" href="#fnr.6">6</a></sup> Prometheus. <https://prometheus.io/>
 
-<sup><a id="fn.7" href="#fnr.7">7</a></sup> net\_iocounters. <https://psutil.readthedocs.io/en/latest/#psutil.net_io_counters>
+<sup><a id="fn.7" href="#fnr.7">7</a></sup> Ping3. <https://pypi.org/project/ping3/>
+
+<sup><a id="fn.8" href="#fnr.8">8</a></sup> psutil. <https://pypi.org/project/psutil/>
+
+<sup><a id="fn.9" href="#fnr.9">9</a></sup> net\_iocounters. <https://psutil.readthedocs.io/en/latest/#psutil.net_io_counters>
